@@ -1,8 +1,11 @@
+import { existsSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import { escapeHtml } from "./html.ts";
 import { renderLayout } from "./layout.ts";
-import { loadPages, slugify, type Page, type PageIndex } from "./pages.ts";
+import { markdownPath, renderLlmsTxt } from "./llms.ts";
+import { loadPages, slugFromFile, slugify, type Page, type PageIndex } from "./pages.ts";
 import { renderMarkdown } from "./render.ts";
+import { renderSearchPage, search, searchEntry, type SearchEntry } from "./search.ts";
 import {
   descriptionFromHtml,
   parseSiteUrl,
@@ -33,7 +36,8 @@ export interface WikiOptions {
   siteUrl?: string;
   /**
    * Image shown when a page is shared, as a path such as `/public/card.png` or a full URL.
-   * 1200 by 630 pixels suits most sites.
+   * 1200 by 630 pixels suits most sites. Defaults to `card.png` in the public directory
+   * when that file exists, which is where `bun run cards` writes one.
    */
   image?: string;
   /** Any CSS color, used for links and highlights. */
@@ -55,6 +59,11 @@ export interface Wiki {
 
 const STYLESHEET = resolve(import.meta.dir, "wiki.css");
 const HTML_HEADERS = { "content-type": "text/html; charset=utf-8" };
+const MARKDOWN = "text/markdown; charset=utf-8";
+/** The card that `bun run cards` draws for a wiki, in its public directory. */
+const CARD = "card.png";
+/** The longest search that is looked at. Anything after this is dropped. */
+const MAX_QUERY_LENGTH = 200;
 /** A file directly under the site root, such as `/robots.txt` or `/favicon.ico`. */
 const ROOT_FILE = /^\/[^/.][^/]*\.[a-z0-9]+$/i;
 
@@ -78,18 +87,50 @@ export function createWiki(options: WikiOptions): Wiki {
     return (cached ??= loadPages(contentDir, options.title));
   }
 
+  /** Every page rendered and reduced to its text, for search and for `/llms.txt`. */
+  let cachedEntries: Promise<SearchEntry[]> | undefined;
+  function entries(index: PageIndex): Promise<SearchEntry[]> {
+    const load = () =>
+      Promise.all(
+        [...index.values()].map(async (page) => {
+          const body = renderMarkdown(await Bun.file(page.file).text(), index);
+          // A page with no paragraph of its own has no summary, where a link preview would borrow the wiki's.
+          return searchEntry(page, body, page.slug === "" ? describe(page, body) : descriptionFromHtml(body));
+        }),
+      );
+    if (!cache) return load();
+    return (cachedEntries ??= load());
+  }
+
+  /** The home page speaks for the whole wiki. Every other page is summed up by its own opening paragraph. */
+  function describe(page: Page | undefined, body: string): string | undefined {
+    const summary = descriptionFromHtml(body);
+    return page?.slug === "" ? (options.description ?? summary) : (summary ?? options.description);
+  }
+
+  let cachedImage: { path: string | undefined } | undefined;
+  function image(): string | undefined {
+    if (options.image) return options.image;
+    if (cachedImage) return cachedImage.path;
+    const path = publicDir && existsSync(resolve(publicDir, CARD)) ? `/public/${CARD}` : undefined;
+    if (cache) cachedImage = { path };
+    return path;
+  }
+
   interface Rendered {
     title: string;
     body: string;
-    /** The page being shown. Left out for the 404 page. */
+    /** The page being shown. Left out for pages that are not content, such as search results and the 404 page. */
     page?: Page;
+    /** Leaves the search box out of the header, for the page that has a larger one of its own. */
+    ownSearch?: boolean;
   }
 
   function html(index: PageIndex, origin: string, rendered: Rendered, status = 200) {
     const { page, title, body } = rendered;
-    // The home page speaks for the whole wiki. Every other page is summed up by its own opening paragraph.
-    const summary = descriptionFromHtml(body);
-    const description = page?.slug === "" ? (options.description ?? summary) : (summary ?? options.description);
+    // Search results are not a page with a summary of its own.
+    const description = rendered.ownSearch ? options.description : describe(page, body);
+    const cardImage = image();
     const document = renderLayout({
       wikiTitle: options.title,
       pageTitle: title,
@@ -99,7 +140,10 @@ export function createWiki(options: WikiOptions): Wiki {
       accent: options.accent,
       description,
       url: page && `${origin}/${page.slug}`,
-      image: options.image && new URL(options.image, origin).href,
+      image: cardImage && new URL(cardImage, origin).href,
+      markdown: page && `${origin}${markdownPath(page.slug)}`,
+      // A wiki with a page of its own at `/search` keeps that page, and goes without the search box.
+      search: !index.has("search") && !rendered.ownSearch,
       noindex: !page,
       structuredData:
         page && structuredData({ origin, siteName: options.title, description, page, pages: index }),
@@ -139,10 +183,42 @@ export function createWiki(options: WikiOptions): Wiki {
         return text(renderSitemap(await pages(), origin), "application/xml; charset=utf-8");
       }
       if (path === "/favicon.svg") return text(renderFavicon(options.title, options.accent), "image/svg+xml");
+      if (path === "/llms.txt") {
+        const index = await pages();
+        const llms = renderLlmsTxt({
+          title: options.title,
+          description: options.description,
+          origin,
+          pages: await entries(index),
+        });
+        return text(llms, MARKDOWN);
+      }
     }
 
     // URLs are matched against the page index and never used to build file paths.
     const index = await pages();
+
+    if (/\.md$/i.test(path)) {
+      // A page's own markdown: `/guides/setup.md`, and `/index.md` for the home page.
+      const source = index.get(slugFromFile(path.slice(1)));
+      if (source) {
+        return new Response(Bun.file(source.file), {
+          headers: {
+            "content-type": MARKDOWN,
+            "cache-control": cacheControl,
+            // Tells search engines that the HTML page is the one to list.
+            link: `<${origin}/${source.slug}>; rel="canonical"`,
+          },
+        });
+      }
+    }
+
+    if (path === "/search" && !index.has("search")) {
+      const query = (url.searchParams.get("q") ?? "").slice(0, MAX_QUERY_LENGTH);
+      const results = query.trim() ? search(await entries(index), query) : [];
+      return html(index, origin, { title: "Search", body: renderSearchPage(query, results), ownSearch: true });
+    }
+
     const requested = path.slice(1);
     const slug = slugify(requested);
     const page = index.get(slug);

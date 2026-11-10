@@ -27,7 +27,9 @@ Some wikis have their own notes in `apps/<wiki>/README.md`. Read those first.
 
 ## Changing the engine
 
-The shared code is in `packages/core`. Keep it free of dependencies beyond Bun, and add a test in `packages/core/test` for any behavior you add or change.
+The shared code is in `packages/core`. Its only dependency beyond Bun is [Pele](https://pele.run), which draws diagrams. Reach for what Bun has built in before adding another, and add a test in `packages/core/test` for any behavior you add or change.
+
+If you change a wiki's title, description, accent color or favicon, run `bun run cards <wiki>` to redraw its link preview image and commit the result.
 
 ## Before you open a pull request
 

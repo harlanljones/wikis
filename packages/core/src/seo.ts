@@ -12,6 +12,8 @@ export interface PageMeta {
   url?: string;
   /** Absolute URL of the image shown in link previews. */
   image?: string;
+  /** Absolute URL of the page's markdown source, for readers that prefer it to HTML. */
+  markdown?: string;
   /** Whether this is the wiki's home page. */
   home?: boolean;
   /** Asks search engines to leave the page out of their index. */
@@ -32,6 +34,9 @@ export function renderMetaTags(meta: PageMeta): string {
   add("meta", "name", "description", meta.description);
   if (meta.noindex) add("meta", "name", "robots", "noindex");
   add("link", "rel", "canonical", meta.url);
+  if (meta.markdown) {
+    tags.push(`<link rel="alternate" type="text/markdown" href="${escapeHtml(meta.markdown)}">`);
+  }
   add("meta", "property", "og:site_name", meta.siteName);
   add("meta", "property", "og:type", meta.home ? "website" : "article");
   add("meta", "property", "og:title", meta.title);

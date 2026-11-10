@@ -1,3 +1,4 @@
+import { renderDiagrams } from "./diagrams.ts";
 import { escapeHtml, unescapeHtml } from "./html.ts";
 import { slugify, type PageIndex } from "./pages.ts";
 
@@ -9,6 +10,8 @@ const WIKI_LINK = /<x-wikilink data-target="([^"]*)">([\s\S]*?)<\/x-wikilink>/g;
  * `[[Page Name]]` and `[[Page Name|label]]` become links to the matching page.
  * Links whose target is not in `pages` get the `missing` class so they can be styled,
  * and `rel="nofollow"` so crawlers do not chase pages that have not been written.
+ *
+ * A fenced `mermaid` code block becomes the diagram it describes.
  */
 export function renderMarkdown(source: string, pages: PageIndex): string {
   const html = Bun.markdown.html(source, {
@@ -16,7 +19,7 @@ export function renderMarkdown(source: string, pages: PageIndex): string {
     autolinks: true,
     headings: { ids: true },
   });
-  return html.replace(WIKI_LINK, (_match, target: string, label: string) => {
+  return renderDiagrams(html).replace(WIKI_LINK, (_match, target: string, label: string) => {
     const [name = "", anchor] = unescapeHtml(target).split("#", 2);
     const slug = slugify(name);
     const href = `/${slug}${anchor ? `#${slugify(anchor)}` : ""}`;
