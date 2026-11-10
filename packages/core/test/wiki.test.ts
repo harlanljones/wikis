@@ -61,7 +61,110 @@ describe("wiki links", () => {
 
   test("mark links to pages that do not exist", async () => {
     const html = await (await get("/")).text();
-    expect(html).toContain('<a href="/not-written-yet" class="wikilink missing">Not Written Yet</a>');
+    expect(html).toContain(
+      '<a href="/not-written-yet" class="wikilink missing" rel="nofollow">Not Written Yet</a>',
+    );
+  });
+});
+
+describe("search engines and link previews", () => {
+  const published = createWiki({
+    title: "Test Wiki",
+    description: 'A wiki for "testing" <things>.',
+    contentDir: `${import.meta.dir}/fixtures/content`,
+    publicDir: `${import.meta.dir}/fixtures/public`,
+    siteUrl: "https://wiki.example.com/",
+    image: "/public/card.png",
+    accent: "#0f766e",
+  });
+  const page = async (path: string) =>
+    (await published.fetch(new Request(`http://localhost:3000${path}`))).text();
+
+  test("describes the home page with the wiki's description", async () => {
+    const html = await page("/");
+    expect(html).toContain('<meta name="description" content="A wiki for &quot;testing&quot; &lt;things&gt;.">');
+    expect(html).toContain('<link rel="canonical" href="https://wiki.example.com/">');
+    expect(html).toContain('<meta property="og:type" content="website">');
+    expect(html).toContain('<meta property="og:title" content="Test Wiki">');
+    expect(html).toContain('<meta property="og:url" content="https://wiki.example.com/">');
+    expect(html).toContain('<meta property="og:image" content="https://wiki.example.com/public/card.png">');
+    expect(html).toContain('<meta name="twitter:card" content="summary_large_image">');
+    expect(html).toContain('"@type":"WebSite"');
+    expect(html).toContain("\\u003cthings>");
+  });
+
+  test("describes other pages with their first paragraph", async () => {
+    const html = await page("/guides/setup");
+    expect(html).toContain('<meta name="description" content="No heading here.">');
+    expect(html).toContain('<link rel="canonical" href="https://wiki.example.com/guides/setup">');
+    expect(html).toContain('<meta property="og:type" content="article">');
+    expect(html).toContain('<meta property="og:title" content="Setup">');
+    expect(html).toContain('<link rel="icon" href="/favicon.svg" type="image/svg+xml">');
+
+    const data = JSON.parse(html.match(/<script type="application\/ld\+json">(.*?)<\/script>/)?.[1] ?? "");
+    expect(data["@type"]).toBe("BreadcrumbList");
+    expect(data.itemListElement.map((item: { name: string; item: string }) => [item.name, item.item])).toEqual([
+      ["Test Wiki", "https://wiki.example.com/"],
+      ["Guides", "https://wiki.example.com/guides"],
+      ["Setup", "https://wiki.example.com/guides/setup"],
+    ]);
+  });
+
+  test("falls back to the address of the request, as seen by a reverse proxy", async () => {
+    expect(await (await get("/guides")).text()).toContain('<link rel="canonical" href="http://wiki.test/guides">');
+
+    const proxied = await get("/guides", {
+      headers: { "x-forwarded-proto": "https", "x-forwarded-host": "wiki.example.org" },
+    });
+    expect(await proxied.text()).toContain('<link rel="canonical" href="https://wiki.example.org/guides">');
+  });
+
+  test("keeps the 404 page out of search results", async () => {
+    const html = await page("/nope");
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).not.toContain("og:url");
+    expect(html).not.toContain("application/ld+json");
+  });
+
+  test("serves a sitemap of every page", async () => {
+    const response = await published.fetch(new Request("http://localhost:3000/sitemap.xml"));
+    expect(response.headers.get("content-type")).toBe("application/xml; charset=utf-8");
+    const locations = [...(await response.text()).matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+    expect(locations).toEqual([
+      "https://wiki.example.com/",
+      "https://wiki.example.com/getting-started",
+      "https://wiki.example.com/guides",
+      "https://wiki.example.com/guides/setup",
+    ]);
+  });
+
+  test("serves a robots.txt that points at the sitemap", async () => {
+    const response = await published.fetch(new Request("http://localhost:3000/robots.txt"));
+    expect(response.headers.get("content-type")).toBe("text/plain; charset=utf-8");
+    expect(await response.text()).toBe("User-agent: *\nAllow: /\n\nSitemap: https://wiki.example.com/sitemap.xml\n");
+  });
+
+  test("serves a default favicon in the wiki's accent color", async () => {
+    const response = await published.fetch(new Request("http://localhost:3000/favicon.svg"));
+    expect(response.headers.get("content-type")).toBe("image/svg+xml");
+    const svg = await response.text();
+    expect(svg).toContain('fill="#0f766e"');
+    expect(svg).toContain(">T</text>");
+  });
+
+  test("lets a wiki replace root files from its public directory", async () => {
+    const response = await get("/ads.txt");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("placeholder\n");
+    expect((await get("/missing.txt")).status).toBe(404);
+    expect((await get("/.hidden.txt")).status).toBe(404);
+  });
+
+  test("rejects a site URL that is not a web address", () => {
+    const options = { title: "Test Wiki", contentDir: `${import.meta.dir}/fixtures/content` };
+    expect(() => createWiki({ ...options, siteUrl: "wiki.example.com" })).toThrow("Invalid wiki site URL");
+    expect(() => createWiki({ ...options, siteUrl: "ftp://wiki.example.com" })).toThrow("Invalid wiki site URL");
   });
 });
 
