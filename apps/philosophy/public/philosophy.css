@@ -1,0 +1,178 @@
+/* Styles for the Philosophy and Political Theory Wiki, loaded after the shared wiki stylesheet. */
+
+:root {
+  --accent: #8c2f39;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #e8a0a8;
+  }
+}
+
+/* The navigation lists every page, so only the open section is expanded. */
+.site-nav a.nav-folded {
+  display: none;
+}
+
+.site-nav li[style*="--depth: 0"] a {
+  font-weight: 600;
+}
+
+.nav-toggle,
+.nav-toggle-label {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .nav-toggle {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .nav-toggle-label {
+    display: block;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .nav-toggle-label::after {
+    content: " ▾";
+  }
+
+  .nav-toggle:focus-visible + .nav-toggle-label {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .nav-toggle:not(:checked) ~ ul {
+    display: none;
+  }
+
+  .nav-toggle:checked ~ ul {
+    margin-top: 8px;
+  }
+}
+
+/* Quotations from the texts are the point of many pages, so they read as text, not as asides. */
+article blockquote {
+  padding: 2px 16px;
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+  font-family: Georgia, "Iowan Old Style", "Times New Roman", serif;
+  font-size: 1.05rem;
+}
+
+/* The "At a glance" table that opens each thinker page: a label column and a value column. */
+article table th:empty {
+  padding: 0;
+  border: 0;
+}
+
+article td:first-child strong {
+  white-space: nowrap;
+}
+
+/* Lifespan chart on the home and timeline pages. */
+.timeline figure {
+  margin: 0 0 16px;
+  padding: 12px 12px 8px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.timeline figcaption {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.timeline svg {
+  display: block;
+  width: 100%;
+  min-width: 540px;
+  height: auto;
+  font-family: inherit;
+}
+
+.timeline-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.timeline-tick {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+.timeline-hit {
+  fill: transparent;
+}
+
+.timeline-bar {
+  fill: var(--accent);
+}
+
+.timeline-name {
+  fill: var(--text);
+  font-size: 12px;
+}
+
+.timeline-row:hover .timeline-hit,
+.timeline-row:focus-visible .timeline-hit {
+  fill: var(--border);
+}
+
+.timeline-row:hover .timeline-name,
+.timeline-row:focus-visible .timeline-name {
+  font-weight: 650;
+  text-decoration: underline;
+}
+
+.timeline-row:focus {
+  outline: none;
+}
+
+/* Links to the thinkers born before and after, at the foot of each thinker page. */
+.thinker-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.thinker-nav a {
+  display: block;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.thinker-nav a:hover {
+  background: var(--surface);
+}
+
+.thinker-nav small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.thinker-next {
+  text-align: right;
+}
