@@ -132,7 +132,6 @@ describe("renderSearchPage", () => {
 test("the search page lists the best thirty and says how many matched", () => {
   const many = Array.from({ length: 34 }, (_, index) => entry(`page-${index}`, `Page ${index}`, "<p>Same words.</p>"));
   const html = renderSearchPage("same", search(many, "same"));
-  expect(html).toContain("34 pages match <strong>same</strong>.");
-  expect(html).toContain("The best 30 are shown.");
+  expect(html).toContain("34 pages match <strong>same</strong>. The best 30 are shown.");
   expect(html.split("<li>").length - 1).toBe(30);
 });

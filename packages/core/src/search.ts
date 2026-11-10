@@ -241,13 +241,11 @@ export function renderSearchPage(query: string, results: SearchResult[]): string
 
   const count = results.length === 1 ? "1 page" : `${results.length} pages`;
   const every = results.every((result) => result.matched === searchTerms(query).length);
-  lines.push(
-    every
-      ? `<p class="search-count">${count} ${results.length === 1 ? "matches" : "match"} ${shown}.</p>`
-      : `<p class="search-count">No page has every word of ${shown}. ${count} ${results.length === 1 ? "has" : "have"} some of them.</p>`,
-    '<ol class="search-results">',
-  );
-  if (results.length > MAX_SHOWN) lines.splice(-1, 0, `<p class="search-count">The best ${MAX_SHOWN} are shown.</p>`);
+  const summary = every
+    ? `${count} ${results.length === 1 ? "matches" : "match"} ${shown}.`
+    : `No page has every word of ${shown}. ${count} ${results.length === 1 ? "has" : "have"} some of them.`;
+  const cut = results.length > MAX_SHOWN ? ` The best ${MAX_SHOWN} are shown.` : "";
+  lines.push(`<p class="search-count">${summary}${cut}</p>`, '<ol class="search-results">');
   for (const { page, excerpt, section } of results.slice(0, MAX_SHOWN)) {
     const href = `/${escapeHtml(page.slug)}`;
     const under = section
