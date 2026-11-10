@@ -8,9 +8,9 @@ A collection of plain-language wikis, and the small engine that serves them. Eac
 
 [![The home page of California on Foot, with a map of every place it covers](docs/screenshots/california.png)](apps/california)
 
-| Photography Wiki | Computer Parts Wiki |
-| --- | --- |
-| [![The Photography Wiki home page](docs/screenshots/photography.png)](apps/photography) | [![The graphics card page of the Computer Parts Wiki, in dark mode](docs/screenshots/computer-parts.png)](apps/computer-parts) |
+| Photography Wiki | Computer Parts Wiki | Philosophy and Political Theory Wiki |
+| --- | --- | --- |
+| [![The Photography Wiki home page](docs/screenshots/photography.png)](apps/photography) | [![The graphics card page of the Computer Parts Wiki, in dark mode](docs/screenshots/computer-parts.png)](apps/computer-parts) | [![The timeline page of the Philosophy and Political Theory Wiki, with a chart of when each thinker lived](docs/screenshots/philosophy.png)](apps/philosophy) |
 
 ## The wikis
 
@@ -19,6 +19,7 @@ A collection of plain-language wikis, and the small engine that serves them. Eac
 | **California on Foot** | The geography and history behind a statewide California hike list: one reading per place, grouped by region, with a map of every one. | [`apps/california`](apps/california) | <http://localhost:3001> |
 | **Computer Parts** | Choosing computer hardware: what each part does, what every spec means, and what to buy for a given budget or kind of work. | [`apps/computer-parts`](apps/computer-parts) | <http://localhost:3002> |
 | **Photography** | Modern mirrorless and DSLR cameras: how exposure works, what the specs mean, how the camera systems differ, and how to choose a camera and lenses. | [`apps/photography`](apps/photography) | <http://localhost:3003> |
+| **Philosophy and Political Theory** | Political philosophy through its thinkers, from Plato and Aristotle through Hobbes to Rawls: one page per thinker, plus the ideas, traditions and debates that connect them. | [`apps/philosophy`](apps/philosophy) | <http://localhost:3004> |
 | **Example** | A four-page starter that shows how pages, sections and wiki links work. Copy it to begin a new wiki. | [`apps/example`](apps/example) | <http://localhost:3000> |
 
 The pages are ordinary markdown, so you can also read them on GitHub under each app's `content/` folder.
@@ -65,6 +66,7 @@ apps/
     src/server.ts     The Bun server for this wiki.
   california/         The other wikis follow the same shape.
   computer-parts/
+  philosophy/
   photography/
 packages/
   core/               @wikis/core: page loading, rendering, layout and SEO shared by every wiki.
@@ -135,7 +137,7 @@ Bun.serve({
 });
 ```
 
-A wiki can also change the pages themselves. [`apps/california`](apps/california/src/wiki.ts) passes each response through Bun's `HTMLRewriter` to add its own stylesheet, fold the sidebar and draw its map.
+A wiki can also change the pages themselves. [`apps/california`](apps/california/src/wiki.ts) passes each response through Bun's `HTMLRewriter` to add its own stylesheet, fold the sidebar and draw its map, and [`apps/philosophy`](apps/philosophy/src/wiki.ts) does the same to draw its timeline.
 
 Besides pages, every wiki serves `/assets/wiki.css` (the shared stylesheet), `/public/*` (the app's static files), `/sitemap.xml`, `/robots.txt`, `/favicon.svg` and `/healthz`.
 
