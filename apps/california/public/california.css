@@ -1,0 +1,217 @@
+/* Styles for California on Foot, loaded after the shared wiki stylesheet. */
+
+:root {
+  --accent: #2f6b4a;
+  --pin-bay-area: #2563eb;
+  --pin-central-coast: #0d9488;
+  --pin-north-coast: #3f8f2f;
+  --pin-gold-country: #b98500;
+  --pin-volcano-country: #dc2626;
+  --pin-sierra-nevada: #7c3aed;
+  --pin-eastern-sierra: #c026d3;
+  --pin-desert: #ea580c;
+  --pin-south-coast: #5b6b82;
+  --map-land: #e6eadf;
+  --map-edge: #8a948c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #7fbf97;
+    --pin-bay-area: #6ea8fe;
+    --pin-central-coast: #2dd4bf;
+    --pin-north-coast: #84cc56;
+    --pin-gold-country: #eab308;
+    --pin-volcano-country: #f87171;
+    --pin-sierra-nevada: #a78bfa;
+    --pin-eastern-sierra: #e879f9;
+    --pin-desert: #fb923c;
+    --pin-south-coast: #a3b1c6;
+    --map-land: #232b26;
+    --map-edge: #59645d;
+  }
+}
+
+/* The navigation lists every reading, so only the open section is expanded. */
+.site-nav a.nav-folded {
+  display: none;
+}
+
+.site-nav li[style*="--depth: 0"] a {
+  font-weight: 600;
+}
+
+.nav-toggle,
+.nav-toggle-label {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .nav-toggle {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  .nav-toggle-label {
+    display: block;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .nav-toggle-label::after {
+    content: " ▾";
+  }
+
+  .nav-toggle:focus-visible + .nav-toggle-label {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .nav-toggle:not(:checked) ~ ul {
+    display: none;
+  }
+
+  .nav-toggle:checked ~ ul {
+    margin-top: 8px;
+  }
+}
+
+/* The "On your hike list" box that opens each place page. */
+article > blockquote:first-of-type {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+article > blockquote:first-of-type p {
+  margin: 0;
+}
+
+/* Home page map. */
+.map-views {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.map-views figure {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.map-views svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.map-views figcaption {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.map-land {
+  fill: var(--map-land);
+  stroke: var(--map-edge);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-city {
+  fill: var(--muted);
+}
+
+.map-city-label {
+  fill: var(--muted);
+  font-family: inherit;
+}
+
+.map-hit {
+  fill: transparent;
+}
+
+.map-dot {
+  stroke: var(--surface);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-pin:hover .map-dot,
+.map-pin:focus-visible .map-dot {
+  stroke: var(--text);
+  stroke-width: 2.5;
+}
+
+.map-pin:focus {
+  outline: none;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.map-legend a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.map-legend a:hover {
+  text-decoration: underline;
+}
+
+.map-legend i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.pin-bay-area .map-dot { fill: var(--pin-bay-area); }
+.pin-central-coast .map-dot { fill: var(--pin-central-coast); }
+.pin-north-coast .map-dot { fill: var(--pin-north-coast); }
+.pin-gold-country .map-dot { fill: var(--pin-gold-country); }
+.pin-volcano-country .map-dot { fill: var(--pin-volcano-country); }
+.pin-sierra-nevada .map-dot { fill: var(--pin-sierra-nevada); }
+.pin-eastern-sierra .map-dot { fill: var(--pin-eastern-sierra); }
+.pin-desert .map-dot { fill: var(--pin-desert); }
+.pin-south-coast .map-dot { fill: var(--pin-south-coast); }
+
+i.pin-bay-area { background: var(--pin-bay-area); }
+i.pin-central-coast { background: var(--pin-central-coast); }
+i.pin-north-coast { background: var(--pin-north-coast); }
+i.pin-gold-country { background: var(--pin-gold-country); }
+i.pin-volcano-country { background: var(--pin-volcano-country); }
+i.pin-sierra-nevada { background: var(--pin-sierra-nevada); }
+i.pin-eastern-sierra { background: var(--pin-eastern-sierra); }
+i.pin-desert { background: var(--pin-desert); }
+i.pin-south-coast { background: var(--pin-south-coast); }
+
+@media (max-width: 720px) {
+  .map-views {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
