@@ -1,7 +1,7 @@
 /**
  * Scaffolds a new wiki app under `apps/`.
  *
- *   bun run new-wiki <name> [--title "Display Title"] [--port 3001]
+ *   bun run new-wiki <name> [--title "Display Title"] [--description "One sentence"] [--port 3001]
  */
 import { parseArgs } from "node:util";
 import { mkdir, readdir } from "node:fs/promises";
@@ -14,6 +14,7 @@ const { values, positionals } = parseArgs({
   args: Bun.argv.slice(2),
   options: {
     title: { type: "string" },
+    description: { type: "string" },
     port: { type: "string" },
   },
   allowPositionals: true,
@@ -21,7 +22,9 @@ const { values, positionals } = parseArgs({
 
 const name = positionals[0];
 if (!name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) {
-  console.error('Usage: bun run new-wiki <name> [--title "Display Title"] [--port 3001]');
+  console.error(
+    'Usage: bun run new-wiki <name> [--title "Display Title"] [--description "One sentence"] [--port 3001]',
+  );
   console.error("The name must be lowercase letters, numbers and hyphens, for example: field-notes");
   process.exit(1);
 }
@@ -34,6 +37,8 @@ if (await Bun.file(join(appDir, "package.json")).exists()) {
 
 const title =
   values.title ?? name.split("-").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+// Shown in search results and link previews. Without one, the home page's first paragraph is used.
+const description = values.description ? `\n  description: ${JSON.stringify(values.description)},` : "";
 const port = values.port ? Number(values.port) : await nextPort();
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error(`Invalid port: ${values.port}`);
@@ -59,7 +64,7 @@ const files: Record<string, string> = {
   "src/server.ts": `import { createWiki } from "@wikis/core";
 
 const wiki = createWiki({
-  title: ${JSON.stringify(title)},
+  title: ${JSON.stringify(title)},${description}
   contentDir: \`\${import.meta.dir}/../content\`,
   publicDir: \`\${import.meta.dir}/../public\`,
 });

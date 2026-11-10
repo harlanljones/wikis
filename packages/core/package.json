@@ -1,6 +1,8 @@
 {
   "name": "@wikis/core",
   "version": "0.0.0",
+  "description": "Page loading, rendering, layout and SEO shared by every wiki in this repo.",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "exports": {

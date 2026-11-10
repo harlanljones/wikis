@@ -1,5 +1,12 @@
 {
   "name": "wikis",
+  "description": "A collection of plain-language wikis, each a small Bun web app that serves markdown files.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harlanljones/wikis.git"
+  },
+  "homepage": "https://github.com/harlanljones/wikis#readme",
   "private": true,
   "type": "module",
   "workspaces": [
