@@ -183,6 +183,10 @@ SITE_URL=https://photography.example.com PORT=8080 bun run --filter @wikis/photo
 
 Corrections and new pages are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for how to run the wikis, the writing conventions and the checks to run before opening a pull request.
 
+## Credits
+
+Thanks to [0xSero](https://x.com/0xSero) for the inspiration behind this project.
+
 ## License
 
 - The code is released under the [MIT License](LICENSE).
