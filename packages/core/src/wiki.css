@@ -21,6 +21,17 @@
   }
 }
 
+/* Moving between pages fades instead of flashing, in browsers that support it. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+}
+
+::view-transition-group(root) {
+  animation-duration: 0.15s;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -42,6 +53,13 @@ a {
 }
 
 .site-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  /* As tall as it is with the search box, so it does not jump on the search page, which has none. */
+  min-height: 68px;
   padding: 14px 24px;
   border-bottom: 1px solid var(--border);
   font-weight: 650;
@@ -51,6 +69,34 @@ a {
 .site-header a {
   color: inherit;
   text-decoration: none;
+}
+
+.site-search {
+  flex: 0 1 260px;
+}
+
+.site-search input,
+.search-form input,
+.search-form button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.site-search input {
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.site-search input:focus-visible,
+.search-form input:focus-visible,
+.search-form button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .site-body {
@@ -173,6 +219,89 @@ hr {
   border: 0;
   border-top: 1px solid var(--border);
   margin: 2em 0;
+}
+
+/* A diagram drawn from a fenced `mermaid` block. Its colors follow the wiki's theme. */
+figure.diagram {
+  margin: 1.5em 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.pele {
+  --pele-bg: var(--bg);
+  --pele-fg: var(--text);
+  --pele-muted: var(--muted);
+  --pele-line: var(--muted);
+  --pele-surface: var(--surface);
+  --pele-surface-alt: var(--border);
+  --pele-border: var(--muted);
+  --pele-accent: var(--accent);
+  --pele-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pele-radius: 6px;
+}
+
+figure.diagram-error {
+  text-align: left;
+}
+
+figure.diagram-error figcaption {
+  color: var(--missing);
+  font-size: 0.9rem;
+}
+
+/* The search page. */
+.search-form {
+  display: flex;
+  gap: 8px;
+  margin: 1em 0;
+}
+
+.search-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-form button {
+  cursor: pointer;
+}
+
+.search-count {
+  color: var(--muted);
+}
+
+.search-results {
+  padding: 0;
+  list-style: none;
+}
+
+.search-results li {
+  margin: 0 0 1.4em;
+}
+
+.search-results p {
+  margin: 0.2em 0 0;
+}
+
+.search-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.search-section {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-section a {
+  color: inherit;
+}
+
+mark {
+  padding: 0 0.15em;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: inherit;
 }
 
 /* A [[wiki link]] to a page that does not exist yet. */
