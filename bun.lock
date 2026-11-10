@@ -16,8 +16,22 @@
         "@wikis/core": "workspace:*",
       },
     },
+    "apps/computer-parts": {
+      "name": "@wikis/computer-parts",
+      "version": "0.0.0",
+      "dependencies": {
+        "@wikis/core": "workspace:*",
+      },
+    },
     "apps/example": {
       "name": "@wikis/example",
+      "version": "0.0.0",
+      "dependencies": {
+        "@wikis/core": "workspace:*",
+      },
+    },
+    "apps/photography": {
+      "name": "@wikis/photography",
       "version": "0.0.0",
       "dependencies": {
         "@wikis/core": "workspace:*",
@@ -35,9 +49,13 @@
 
     "@wikis/california": ["@wikis/california@workspace:apps/california"],
 
+    "@wikis/computer-parts": ["@wikis/computer-parts@workspace:apps/computer-parts"],
+
     "@wikis/core": ["@wikis/core@workspace:packages/core"],
 
     "@wikis/example": ["@wikis/example@workspace:apps/example"],
+
+    "@wikis/photography": ["@wikis/photography@workspace:apps/photography"],
 
     "bun-types": ["bun-types@1.4.4", "", { "dependencies": { "@types/node": "*", "undici-types": "*" } }, "sha512-yjrJh5oGX7mMPKGd19YXyIjmEuj4G4zNC30bs7PM9Az7NQ3ndF3j6hbeRdvJTRQEhJ/FYQwW0a2moweEi2hMxQ=="],
 
