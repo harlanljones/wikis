@@ -30,6 +30,13 @@
         "@wikis/core": "workspace:*",
       },
     },
+    "apps/philosophy": {
+      "name": "@wikis/philosophy",
+      "version": "0.0.0",
+      "dependencies": {
+        "@wikis/core": "workspace:*",
+      },
+    },
     "apps/photography": {
       "name": "@wikis/photography",
       "version": "0.0.0",
@@ -54,6 +61,8 @@
     "@wikis/core": ["@wikis/core@workspace:packages/core"],
 
     "@wikis/example": ["@wikis/example@workspace:apps/example"],
+
+    "@wikis/philosophy": ["@wikis/philosophy@workspace:apps/philosophy"],
 
     "@wikis/photography": ["@wikis/photography@workspace:apps/photography"],
 
