@@ -30,6 +30,13 @@
         "@wikis/core": "workspace:*",
       },
     },
+    "apps/llms": {
+      "name": "@wikis/llms",
+      "version": "0.0.0",
+      "dependencies": {
+        "@wikis/core": "workspace:*",
+      },
+    },
     "apps/philosophy": {
       "name": "@wikis/philosophy",
       "version": "0.0.0",
@@ -64,6 +71,8 @@
     "@wikis/core": ["@wikis/core@workspace:packages/core"],
 
     "@wikis/example": ["@wikis/example@workspace:apps/example"],
+
+    "@wikis/llms": ["@wikis/llms@workspace:apps/llms"],
 
     "@wikis/philosophy": ["@wikis/philosophy@workspace:apps/philosophy"],
 
