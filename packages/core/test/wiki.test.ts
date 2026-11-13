@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { rm } from "node:fs/promises";
 import { createWiki } from "../src/index.ts";
 
 const wiki = createWiki({
@@ -165,6 +166,171 @@ describe("search engines and link previews", () => {
     const options = { title: "Test Wiki", contentDir: `${import.meta.dir}/fixtures/content` };
     expect(() => createWiki({ ...options, siteUrl: "wiki.example.com" })).toThrow("Invalid wiki site URL");
     expect(() => createWiki({ ...options, siteUrl: "ftp://wiki.example.com" })).toThrow("Invalid wiki site URL");
+  });
+});
+
+describe("search", () => {
+  const article = (html: string) => html.slice(html.indexOf("<article>"), html.indexOf("</article>"));
+
+  test("puts a search box in the header of every page", async () => {
+    const box = '<form class="site-search" action="/search" role="search">';
+    expect(await (await get("/")).text()).toContain(box);
+    expect(await (await get("/nope")).text()).toContain(box);
+  });
+
+  test("finds pages by their text and links to the section that matched", async () => {
+    const response = await get("/search?q=text+editor");
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain("<title>Search · Test Wiki</title>");
+    expect(html).toContain('<meta name="robots" content="noindex">');
+    expect(html).not.toContain('<meta name="description"');
+    expect(article(html)).toContain('<a class="search-title" href="/guides/setup">Setup</a>');
+    expect(article(html)).toContain('in <a href="/guides/setup#requirements">Requirements</a>');
+    expect(article(html)).toContain("<mark>text</mark> <mark>editor</mark>");
+    // The page has its own search box, so the one in the header is left out.
+    expect(html).not.toContain('class="site-search"');
+  });
+
+  test("shows the search box alone when nothing was typed, and says when nothing matched", async () => {
+    expect(article(await (await get("/search")).text())).not.toContain("search-count");
+    expect(await (await get("/search?q=zzzz")).text()).toContain("No pages match <strong>zzzz</strong>.");
+  });
+
+  test("escapes what was typed", async () => {
+    const html = await (await get(`/search?q=${encodeURIComponent('"><img src=x>')}`)).text();
+    expect(html).not.toContain("<img src=x>");
+  });
+
+  test("gives way to a wiki's own page at /search", async () => {
+    const dir = `${import.meta.dir}/fixtures/.tmp-own-search`;
+    await Bun.write(`${dir}/search.md`, "# Finding things\n\nAsk at the desk.\n");
+    try {
+      const own = createWiki({ title: "Test Wiki", contentDir: dir });
+      const html = await (await own.fetch(new Request("http://wiki.test/search?q=desk"))).text();
+      expect(html).toContain('<h1 id="finding-things">Finding things</h1>');
+      expect(html).not.toContain('class="site-search"');
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("diagrams", () => {
+  test("draws a mermaid code block as an inline diagram", async () => {
+    const html = await (await get("/guides/setup")).text();
+    expect(html).toContain('<figure class="diagram"><svg xmlns="http://www.w3.org/2000/svg" class="pele pele-flowchart"');
+    expect(html).toContain(">The wiki</text>");
+    expect(html).not.toContain("language-mermaid");
+    // Other code blocks are left as code.
+    expect(await (await get("/getting-started")).text()).toContain('<pre><code class="language-sh"># not a title');
+  });
+
+  test("leaves a diagram it cannot read as code, with the reason", async () => {
+    const html = await (await get("/guides/setup")).text();
+    expect(html).toContain('<figure class="diagram diagram-error"><pre><code>flowchart LR\n  broken --&gt;\n</code></pre>');
+    expect(html).toContain("<figcaption>This diagram could not be drawn: Parse error on line 2</figcaption>");
+  });
+
+  test("keeps the text of a diagram out of search", async () => {
+    expect(await (await get("/search?q=flowchart")).text()).toContain("No pages match");
+  });
+});
+
+describe("markdown for other readers", () => {
+  test("serves each page's markdown source at its address plus .md", async () => {
+    const response = await get("/guides/setup.md");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(response.headers.get("link")).toBe('<http://wiki.test/guides/setup>; rel="canonical"');
+    expect(await response.text()).toStartWith("No heading here.\n\n## Requirements");
+
+    expect(await (await get("/index.md")).text()).toStartWith("# Welcome");
+    expect(await (await get("/guides.md")).text()).toStartWith("# Guides");
+    expect(await (await get("/getting-started.md")).text()).toContain("# Getting started");
+  });
+
+  test("answers 404 for markdown that is not a page", async () => {
+    expect((await get("/nope.md")).status).toBe(404);
+    expect((await get("/public/hello.md")).status).toBe(404);
+    expect((await get("/..%2f..%2fREADME.md")).status).toBe(404);
+  });
+
+  test("points each page at its markdown", async () => {
+    expect(await (await get("/guides/setup")).text()).toContain(
+      '<link rel="alternate" type="text/markdown" href="http://wiki.test/guides/setup.md">',
+    );
+    expect(await (await get("/")).text()).toContain(
+      '<link rel="alternate" type="text/markdown" href="http://wiki.test/index.md">',
+    );
+    expect(await (await get("/nope")).text()).not.toContain("text/markdown");
+  });
+
+  test("serves an llms.txt that lists every page by section", async () => {
+    const described = createWiki({
+      title: "Test Wiki",
+      description: "A wiki for testing.",
+      contentDir: `${import.meta.dir}/fixtures/content`,
+      siteUrl: "https://wiki.example.com",
+    });
+    const response = await described.fetch(new Request("http://localhost:3000/llms.txt"));
+    expect(response.headers.get("content-type")).toBe("text/markdown; charset=utf-8");
+    expect(await response.text()).toBe(
+      [
+        "# Test Wiki",
+        "",
+        "> A wiki for testing.",
+        "",
+        "Every page is also available as markdown: add `.md` to its address.",
+        "",
+        "## Pages",
+        "",
+        "- [Welcome](https://wiki.example.com/index.md): A wiki for testing.",
+        "- [Getting started](https://wiki.example.com/getting-started.md): Back to home.",
+        "",
+        "## Guides",
+        "",
+        "- [Guides](https://wiki.example.com/guides.md)",
+        "- [Setup](https://wiki.example.com/guides/setup.md): No heading here.",
+        "",
+      ].join("\n"),
+    );
+  });
+});
+
+describe("moving between pages", () => {
+  test("asks the browser to load linked pages ahead of the click", async () => {
+    const html = await (await get("/")).text();
+    const rules = JSON.parse(html.match(/<script type="speculationrules">(.*?)<\/script>/)?.[1] ?? "");
+    expect(rules.prerender[0].eagerness).toBe("moderate");
+    expect(JSON.stringify(rules)).toContain('{"not":{"href_matches":"/search*"}}');
+  });
+
+  test("fades between pages unless the reader asked for less motion", async () => {
+    const css = await (await get("/assets/wiki.css")).text();
+    expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*@view-transition \{\s*navigation: auto;/);
+  });
+});
+
+describe("link preview image", () => {
+  test("uses card.png from the public directory when the wiki names no image", async () => {
+    const dir = `${import.meta.dir}/fixtures/.tmp-card`;
+    await Bun.write(`${dir}/card.png`, "not really a png");
+    try {
+      const options = { title: "Test Wiki", contentDir: `${import.meta.dir}/fixtures/content`, publicDir: dir };
+      const home = (wiki: ReturnType<typeof createWiki>) =>
+        wiki.fetch(new Request("http://wiki.test/")).then((response) => response.text());
+
+      expect(await home(createWiki(options))).toContain(
+        '<meta property="og:image" content="http://wiki.test/public/card.png">',
+      );
+      expect(await home(createWiki({ ...options, image: "https://cdn.example.com/own.png" }))).toContain(
+        '<meta property="og:image" content="https://cdn.example.com/own.png">',
+      );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+    expect(await (await get("/")).text()).not.toContain("og:image");
   });
 });
 

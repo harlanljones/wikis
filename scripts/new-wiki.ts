@@ -93,6 +93,7 @@ const install = Bun.spawnSync(["bun", "install"], {
 if (install.exitCode !== 0) console.error("`bun install` failed. Run it again from the repo root.");
 
 console.log(`\nCreated apps/${name}. Start it with:\n\n  bun run --filter @wikis/${name} dev\n`);
+console.log(`Draw its link preview image with:\n\n  bun run cards ${name}\n`);
 
 /** One above the highest default port used by an existing app. */
 async function nextPort(): Promise<number> {
